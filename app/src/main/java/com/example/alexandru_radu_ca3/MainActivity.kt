@@ -1,6 +1,7 @@
 package com.example.alexandru_radu_ca3
 
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -29,13 +30,18 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    NavHost(navController = navController, startDestination = "login") {
-                        composable("login") { LoginPage(navController) }
-                        composable("home") { HomePage() }
-                    }
+                    AppNavigation(navController)
                 }
             }
         }
+    }
+}
+
+@Composable
+fun AppNavigation(navController: NavHostController) {
+    NavHost(navController = navController, startDestination = "login") {
+        composable("login") { LoginPage(navController) }
+        composable("home") { HomePage() }
     }
 }
 
@@ -62,7 +68,10 @@ fun LoginPage(navController: NavHostController) {
 
         TextField(
             value = email,
-            onValueChange = { email = it },
+            onValueChange = {
+                email = it
+                Log.d("LoginPage", "Email updated: $email") // Log email updates
+            },
             label = { Text("Email address") },
             modifier = Modifier.fillMaxWidth()
         )
@@ -70,7 +79,10 @@ fun LoginPage(navController: NavHostController) {
 
         TextField(
             value = password,
-            onValueChange = { password = it },
+            onValueChange = {
+                password = it
+                Log.d("LoginPage", "Password updated") // Log password updates (without logging the actual password for security)
+            },
             label = { Text("Password") },
             modifier = Modifier.fillMaxWidth(),
             visualTransformation = PasswordVisualTransformation()
@@ -79,10 +91,15 @@ fun LoginPage(navController: NavHostController) {
 
         Button(
             onClick = {
+                Log.d("LoginPage", "Login attempt with Email: $email") // Log login attempt
                 if (email == "admin@example.com" && password == "admin123") {
+                    Log.d("LoginPage", "Login successful for Email: $email") // Log successful login
                     Toast.makeText(context, "Login Successful!", Toast.LENGTH_SHORT).show()
-                    navController.navigate("home")
+                    navController.navigate("home") {
+                        popUpTo("login") { inclusive = true } // Clear the back stack
+                    }
                 } else {
+                    Log.d("LoginPage", "Invalid login attempt for Email: $email") // Log failed login
                     Toast.makeText(context, "Invalid Credentials!", Toast.LENGTH_SHORT).show()
                 }
             },
@@ -97,11 +114,15 @@ fun LoginPage(navController: NavHostController) {
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            TextButton(onClick = { /* TODO: Handle signup logic */ }) {
+            TextButton(onClick = {
+                Log.d("LoginPage", "Signup clicked") // Log signup click
+            }) {
                 Text("Don't have an account?")
             }
             Spacer(modifier = Modifier.width(8.dp))
-            TextButton(onClick = { /* TODO: Handle admin login logic */ }) {
+            TextButton(onClick = {
+                Log.d("LoginPage", "Admin login clicked") // Log admin login click
+            }) {
                 Text("Admin Login")
             }
         }

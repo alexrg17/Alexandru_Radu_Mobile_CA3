@@ -53,6 +53,9 @@ android {
 }
 
 dependencies {
+    // Coil for loading images
+    implementation("io.coil-kt:coil-compose:2.3.0")
+
     // Navigation Component for Jetpack Compose
     implementation("androidx.navigation:navigation-compose:2.7.3")
 

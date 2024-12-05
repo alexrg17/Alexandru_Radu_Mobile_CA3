@@ -1,60 +1,34 @@
 package com.example.alexandru_radu_ca3
 
-
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColor
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
-// Data class for Room
+// Updated data class with drawable resource IDs
 data class Room(
     val name: String,
     val temperature: String,
@@ -62,27 +36,31 @@ data class Room(
     val resident: String,
     val age: Int,
     val preferredTemp: String,
-    val preferredHumidity: String
+    val preferredHumidity: String,
+    val drawableResId: Int // Updated field for drawable resource ID
 )
 
-// Mock room data
+// Mock data with drawable resource IDs
 val mockRooms = listOf(
-    Room("Jerry's Bedroom", "14.9°C", "78.3%", "Jerry", 88, "14.9°C", "80%"),
-    Room("Alice's Bedroom", "15°C", "77.7%", "Alice", 79, "15°C", "77%"),
-    Room("Paul's Bedroom", "15°C", "77.6%", "Paul", 82, "15°C", "77%"),
-    Room("Emma's Bedroom", "15°C", "76%", "Emma", 90, "15°C", "76%")
+    Room("Jerry's Bedroom", "14.9°C", "78.3%", "Jerry", 88, "14.9°C", "80%", R.drawable.jerry_bedroom),
+    Room("Alice's Bedroom", "15°C", "77.7%", "Alice", 79, "15°C", "77%", R.drawable.alice_bedroom),
+    Room("Paul's Bedroom", "15°C", "77.6%", "Paul", 82, "15°C", "77%", R.drawable.paul_bedroom),
+    Room("Emma's Bedroom", "15°C", "76%", "Emma", 90, "15°C", "76%", R.drawable.emma_bedroom)
 )
 
-// Composable for the homepage
 @Composable
 fun HomePage() {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
+    // Log homepage loading
+    Log.d("HomePage", "Homepage loaded.")
+
     // Trigger Snackbar
     LaunchedEffect(Unit) {
         scope.launch {
             snackbarHostState.showSnackbar("Welcome to the Home Monitor App!")
+            Log.d("HomePage", "Snackbar displayed: Welcome to the Home Monitor App!")
         }
     }
 
@@ -155,6 +133,7 @@ fun HomePage() {
                         enter = fadeIn(animationSpec = tween(durationMillis = 300, delayMillis = index * 100))
                     ) {
                         RoomCard(room)
+                        Log.d("HomePage", "RoomCard displayed for: ${room.name}")
                     }
                 }
             }
@@ -165,39 +144,42 @@ fun HomePage() {
             hostState = snackbarHostState,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(16.dp) // Add padding to avoid edges
+                .padding(16.dp)
         )
     }
 }
 
-// Composable for a room card
 @Composable
 fun RoomCard(room: Room) {
-    // State to track whether the dropdown is expanded
     var isExpanded by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .shadow(8.dp, shape = RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
             .animateContentSize(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy))
             .clickable { isExpanded = !isExpanded },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            // Room Name Row with Temperature, Humidity & Expand/Collapse Icon
-            // Inside the Row with alignment-related logic
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically // Ensure the alignment matches the context
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                // Display image with rounded corners
+                Image(
+                    painter = painterResource(id = room.drawableResId),
+                    contentDescription = "${room.name} Image",
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                )
+
+                Spacer(modifier = Modifier.width(16.dp))
+
                 Column {
                     Text(
                         text = room.name,
@@ -214,24 +196,8 @@ fun RoomCard(room: Room) {
                         )
                     )
                 }
-
-                IconButton(
-                    onClick = { isExpanded = !isExpanded }
-                ) {
-                    val rotationAngle by animateFloatAsState(
-                        targetValue = if (isExpanded) 180f else 0f,
-                        label = "Arrow Rotation"
-                    )
-                    Icon(
-                        imageVector = Icons.Filled.KeyboardArrowDown,
-                        contentDescription = if (isExpanded) "Collapse" else "Expand",
-                        modifier = Modifier.graphicsLayer(rotationZ = rotationAngle),
-                        tint = if (isExpanded) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
-                    )
-                }
             }
 
-            // Expanded Content
             if (isExpanded) {
                 Column(
                     modifier = Modifier.padding(top = 8.dp),
@@ -250,7 +216,6 @@ fun RoomCard(room: Room) {
     }
 }
 
-// Helper function to display a row of label and value
 @Composable
 fun InfoRow(label: String, value: String) {
     Row(
