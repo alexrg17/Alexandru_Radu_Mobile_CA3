@@ -20,13 +20,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import kotlinx.coroutines.launch
+import androidx.navigation.compose.rememberNavController
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
+// Data class for Room
 data class Room(
     val id: String,
     val temperature: String,
@@ -53,31 +55,20 @@ fun HomePage(navController: NavController) {
             override fun onResponse(call: Call<List<Room>>, response: Response<List<Room>>) {
                 if (response.isSuccessful) {
                     rooms = response.body() ?: emptyList()
-                    Log.d("HomePage", "Rooms fetched successfully.")
                 } else {
                     errorMessage = "Error: ${response.code()}"
-                    Log.e("HomePage", "Failed with code: ${response.code()}")
                 }
                 isLoading = false
             }
 
             override fun onFailure(call: Call<List<Room>>, t: Throwable) {
                 errorMessage = "Failed to fetch data: ${t.message}"
-                Log.e("HomePage", "Error: ${t.message}")
                 isLoading = false
             }
         })
     }
 
-    // Trigger Snackbar
-    LaunchedEffect(Unit) {
-        scope.launch {
-            snackbarHostState.showSnackbar("Welcome to the Home Monitor App!")
-            Log.d("Snackbar", "Snackbar displayed: Welcome to the Home Monitor App!")
-        }
-    }
-
-    Box(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .background(
@@ -89,6 +80,8 @@ fun HomePage(navController: NavController) {
                 )
             )
     ) {
+        val isTablet = maxWidth > 600.dp
+
         Column {
             // Header
             Box(
@@ -107,14 +100,12 @@ fun HomePage(navController: NavController) {
             ) {
                 Text(
                     text = "Home Temperature Monitor",
-                    style = MaterialTheme.typography.headlineLarge.copy(
-                        color = Color.White,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
-                    )
+                    style = if (isTablet) MaterialTheme.typography.headlineLarge else MaterialTheme.typography.headlineMedium,
+                    color = Color.White
                 )
             }
 
-            // Content: Loading, Error, or Room List
+            // Content
             when {
                 isLoading -> Box(
                     modifier = Modifier.fillMaxSize(),
@@ -135,32 +126,19 @@ fun HomePage(navController: NavController) {
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(if (isTablet) 24.dp else 12.dp)
                 ) {
-                    itemsIndexed(rooms) { index, room ->
-                        AnimatedVisibility(
-                            visible = true,
-                            enter = fadeIn(animationSpec = tween(durationMillis = 300, delayMillis = index * 100))
-                        ) {
-                            RoomCard(room = room, navController = navController)
-                        }
+                    itemsIndexed(rooms) { _, room ->
+                        RoomCard(room = room, navController = navController, isTablet = isTablet)
                     }
                 }
             }
         }
-
-        // Snackbar
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(16.dp)
-        )
     }
 }
 
 @Composable
-fun RoomCard(room: Room, navController: NavController) {
+fun RoomCard(room: Room, navController: NavController, isTablet: Boolean) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -168,25 +146,25 @@ fun RoomCard(room: Room, navController: NavController) {
             .clickable {
                 navController.navigate("details/${room.id}")
             },
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(if (isTablet) 24.dp else 16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(if (isTablet) 24.dp else 16.dp)) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                    .padding(vertical = if (isTablet) 12.dp else 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Image(
                     painter = painterResource(id = getRoomImageResource(room.resident)),
                     contentDescription = "${room.resident} Image",
                     modifier = Modifier
-                        .size(64.dp)
+                        .size(if (isTablet) 96.dp else 64.dp)
                         .clip(RoundedCornerShape(8.dp))
                 )
 
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(if (isTablet) 24.dp else 16.dp))
 
                 Column {
                     Text(
@@ -196,11 +174,18 @@ fun RoomCard(room: Room, navController: NavController) {
                             color = MaterialTheme.colorScheme.primary
                         )
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(if (isTablet) 8.dp else 4.dp))
                     Text(
                         text = "Temp: ${room.temperature}°C | Humidity: ${room.humidity}%",
                         style = MaterialTheme.typography.bodyMedium.copy(
                             color = MaterialTheme.colorScheme.secondary
+                        )
+                    )
+                    Spacer(modifier = Modifier.height(if (isTablet) 8.dp else 4.dp))
+                    Text(
+                        text = "Age: ${room.age} years",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     )
                 }

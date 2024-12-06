@@ -30,65 +30,49 @@ fun RoomDetailsPage(navController: NavHostController, roomId: String) {
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val apiClient = ApiClient.roomApiService
 
-    // Fetch room details based on the ID
     LaunchedEffect(roomId) {
         val call = apiClient.getRoomsCall()
         call.enqueue(object : Callback<List<Room>> {
             override fun onResponse(call: Call<List<Room>>, response: Response<List<Room>>) {
-                if (response.isSuccessful) {
-                    room = response.body()?.find { it.id == roomId }
-                    isLoading = false
-                } else {
-                    errorMessage = "Error: ${response.code()}"
-                    Log.e("RoomDetailsPage", "Failed with code: ${response.code()}")
-                    isLoading = false
-                }
+                room = response.body()?.find { it.id == roomId }
+                isLoading = false
             }
 
             override fun onFailure(call: Call<List<Room>>, t: Throwable) {
                 errorMessage = "Failed to fetch data: ${t.message}"
-                Log.e("RoomDetailsPage", "Error: ${t.message}")
                 isLoading = false
             }
         })
     }
 
-    // UI Layout
-    Box(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        MaterialTheme.colorScheme.background
-                    )
-                )
-            ),
+            .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
+        val isTablet = maxWidth > 600.dp
+
         when {
             isLoading -> CircularProgressIndicator()
-            errorMessage != null -> {
-                Text(
-                    text = errorMessage ?: "An error occurred",
-                    color = Color.Red,
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
-            room != null -> RoomDetailsContent(navController, room!!)
+            errorMessage != null -> Text(
+                text = errorMessage ?: "An error occurred",
+                color = Color.Red,
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyLarge
+            )
+            room != null -> RoomDetailsContent(navController, room!!, isTablet)
         }
     }
 }
 
 @Composable
-fun RoomDetailsContent(navController: NavController, room: Room) {
+fun RoomDetailsContent(navController: NavController, room: Room, isTablet: Boolean) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.Top,
+        verticalArrangement = if (isTablet) Arrangement.SpaceAround else Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Header with back button
@@ -100,7 +84,7 @@ fun RoomDetailsContent(navController: NavController, room: Room) {
         ) {
             IconButton(onClick = { navController.popBackStack() }) {
                 Icon(
-                    imageVector = Icons.Filled.ArrowBack,
+                    imageVector = Icons.Filled.ArrowBack, // Use regular ArrowBack
                     contentDescription = "Back",
                     tint = MaterialTheme.colorScheme.primary
                 )
@@ -119,7 +103,7 @@ fun RoomDetailsContent(navController: NavController, room: Room) {
             painter = painterResource(id = getRoomImageResource(room.resident)),
             contentDescription = "${room.resident} Image",
             modifier = Modifier
-                .size(128.dp)
+                .size(if (isTablet) 192.dp else 128.dp)
                 .clip(RoundedCornerShape(16.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
                 .padding(16.dp)
