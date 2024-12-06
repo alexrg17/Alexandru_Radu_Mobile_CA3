@@ -2,9 +2,7 @@ package com.example.alexandru_radu_ca3
 
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColor
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -13,78 +11,73 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import androidx.compose.animation.core.tween
 
-// Updated data class with drawable resource IDs
+// Updated Room data class to match the new schema
 data class Room(
-    val name: String,
+    val id: String,
     val temperature: String,
     val humidity: String,
     val resident: String,
     val age: Int,
-    val preferredTemp: String,
-    val preferredHumidity: String,
-    val drawableResId: Int // Updated field for drawable resource ID
-)
-
-// Mock data with drawable resource IDs
-val mockRooms = listOf(
-    Room("Jerry's Bedroom", "14.9°C", "78.3%", "Jerry", 88, "14.9°C", "80%", R.drawable.jerry_bedroom),
-    Room("Alice's Bedroom", "15°C", "77.7%", "Alice", 79, "15°C", "77%", R.drawable.alice_bedroom),
-    Room("Paul's Bedroom", "15°C", "77.6%", "Paul", 82, "15°C", "77%", R.drawable.paul_bedroom),
-    Room("Emma's Bedroom", "15°C", "76%", "Emma", 90, "15°C", "76%", R.drawable.emma_bedroom)
+    val preferredTemp: Int,
+    val preferredHumidity: Int
 )
 
 @Composable
 fun HomePage() {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    var rooms by remember { mutableStateOf<List<Room>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    val apiClient = ApiClient.roomApiService
 
-    // Log homepage loading
-    Log.d("HomePage", "Homepage loaded.")
+    // Fetch data from the API
+    LaunchedEffect(Unit) {
+        val call = apiClient.getRoomsCall()
+        call.enqueue(object : Callback<List<Room>> {
+            override fun onResponse(call: Call<List<Room>>, response: Response<List<Room>>) {
+                if (response.isSuccessful) {
+                    rooms = response.body() ?: emptyList()
+                    Log.d("HomePage", "Rooms fetched successfully.")
+                } else {
+                    errorMessage = "Error: ${response.code()}"
+                    Log.e("HomePage", "Failed with code: ${response.code()}")
+                }
+                isLoading = false
+            }
+
+            override fun onFailure(call: Call<List<Room>>, t: Throwable) {
+                errorMessage = "Failed to fetch data: ${t.message}"
+                Log.e("HomePage", "Error: ${t.message}")
+                isLoading = false
+            }
+        })
+    }
 
     // Trigger Snackbar
     LaunchedEffect(Unit) {
         scope.launch {
             snackbarHostState.showSnackbar("Welcome to the Home Monitor App!")
-            Log.d("HomePage", "Snackbar displayed: Welcome to the Home Monitor App!")
+            Log.d("Snackbar", "Snackbar displayed: Welcome to the Home Monitor App!")
         }
     }
 
-    // Dynamic gradient colors for the header
-    val infiniteTransition = rememberInfiniteTransition(label = "Gradient Animation")
-    val headerColor1 by infiniteTransition.animateColor(
-        initialValue = Color(0xFF6200EE),
-        targetValue = Color(0xFF03DAC5),
-        animationSpec = infiniteRepeatable(
-            tween(durationMillis = 4000, easing = LinearEasing),
-            RepeatMode.Reverse
-        ),
-        label = "Header Gradient Color 1"
-    )
-    val headerColor2 by infiniteTransition.animateColor(
-        initialValue = Color(0xFF03DAC5),
-        targetValue = Color(0xFFFF5722),
-        animationSpec = infiniteRepeatable(
-            tween(durationMillis = 4000, easing = LinearEasing),
-            RepeatMode.Reverse
-        ),
-        label = "Header Gradient Color 2"
-    )
-
+    // UI layout
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -104,7 +97,10 @@ fun HomePage() {
                     .fillMaxWidth()
                     .background(
                         Brush.horizontalGradient(
-                            colors = listOf(headerColor1, headerColor2)
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.secondary
+                            )
                         )
                     )
                     .padding(16.dp),
@@ -119,21 +115,36 @@ fun HomePage() {
                 )
             }
 
-            // Room Cards
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                itemsIndexed(mockRooms) { index, room ->
-                    // Fade-in animation for each card
-                    AnimatedVisibility(
-                        visible = true,
-                        enter = fadeIn(animationSpec = tween(durationMillis = 300, delayMillis = index * 100))
-                    ) {
-                        RoomCard(room)
-                        Log.d("HomePage", "RoomCard displayed for: ${room.name}")
+            // Content: Loading, Error, or Room List
+            when {
+                isLoading -> Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+                errorMessage != null -> Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = errorMessage ?: "An error occurred",
+                        style = MaterialTheme.typography.bodyLarge.copy(color = Color.Red)
+                    )
+                }
+                else -> LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    itemsIndexed(rooms) { index, room ->
+                        AnimatedVisibility(
+                            visible = true,
+                            enter = fadeIn(animationSpec = tween(durationMillis = 300, delayMillis = index * 100))
+                        ) {
+                            RoomCard(room)
+                        }
                     }
                 }
             }
@@ -156,8 +167,7 @@ fun RoomCard(room: Room) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(8.dp, shape = RoundedCornerShape(16.dp))
-            .animateContentSize(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+            .animateContentSize()
             .clickable { isExpanded = !isExpanded },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -169,10 +179,9 @@ fun RoomCard(room: Room) {
                     .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Display image with rounded corners
                 Image(
-                    painter = painterResource(id = room.drawableResId),
-                    contentDescription = "${room.name} Image",
+                    painter = painterResource(id = getRoomImageResource(room.resident)),
+                    contentDescription = "${room.resident} Image",
                     modifier = Modifier
                         .size(64.dp)
                         .clip(RoundedCornerShape(8.dp))
@@ -182,7 +191,7 @@ fun RoomCard(room: Room) {
 
                 Column {
                     Text(
-                        text = room.name,
+                        text = room.resident,
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -190,7 +199,7 @@ fun RoomCard(room: Room) {
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Temp: ${room.temperature} | Humidity: ${room.humidity}",
+                        text = "Temp: ${room.temperature}°C | Humidity: ${room.humidity}%",
                         style = MaterialTheme.typography.bodyMedium.copy(
                             color = MaterialTheme.colorScheme.secondary
                         )
@@ -204,15 +213,23 @@ fun RoomCard(room: Room) {
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f), thickness = 1.dp)
-
                     InfoRow(label = "Resident", value = "${room.resident} (${room.age} years old)")
-                    InfoRow(label = "Preferred Temp", value = room.preferredTemp)
-                    InfoRow(label = "Preferred Humidity", value = room.preferredHumidity)
-
+                    InfoRow(label = "Preferred Temp", value = "${room.preferredTemp}°C")
+                    InfoRow(label = "Preferred Humidity", value = "${room.preferredHumidity}%")
                     HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f), thickness = 1.dp)
                 }
             }
         }
+    }
+}
+
+fun getRoomImageResource(resident: String): Int {
+    return when (resident) {
+        "Eva Paucek" -> R.drawable.jerry_bedroom
+        "Anthony Bergstrom" -> R.drawable.alice_bedroom
+        "Alton Moen" -> R.drawable.paul_bedroom
+        "Mrs. Gerard Herman" -> R.drawable.emma_bedroom
+        else -> R.drawable.placeholder_image
     }
 }
 
