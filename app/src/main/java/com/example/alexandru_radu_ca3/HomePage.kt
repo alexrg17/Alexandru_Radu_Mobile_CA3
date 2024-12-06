@@ -3,6 +3,7 @@ package com.example.alexandru_radu_ca3
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -20,13 +21,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import androidx.compose.animation.core.tween
 
-// Updated Room data class to match the new schema
 data class Room(
     val id: String,
     val temperature: String,
@@ -38,7 +38,7 @@ data class Room(
 )
 
 @Composable
-fun HomePage() {
+fun HomePage(navController: NavController) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var rooms by remember { mutableStateOf<List<Room>>(emptyList()) }
@@ -77,7 +77,6 @@ fun HomePage() {
         }
     }
 
-    // UI layout
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -143,7 +142,7 @@ fun HomePage() {
                             visible = true,
                             enter = fadeIn(animationSpec = tween(durationMillis = 300, delayMillis = index * 100))
                         ) {
-                            RoomCard(room)
+                            RoomCard(room = room, navController = navController)
                         }
                     }
                 }
@@ -161,14 +160,14 @@ fun HomePage() {
 }
 
 @Composable
-fun RoomCard(room: Room) {
-    var isExpanded by remember { mutableStateOf(false) }
-
+fun RoomCard(room: Room, navController: NavController) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .animateContentSize()
-            .clickable { isExpanded = !isExpanded },
+            .clickable {
+                navController.navigate("details/${room.id}")
+            },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
@@ -206,51 +205,6 @@ fun RoomCard(room: Room) {
                     )
                 }
             }
-
-            if (isExpanded) {
-                Column(
-                    modifier = Modifier.padding(top = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f), thickness = 1.dp)
-                    InfoRow(label = "Resident", value = "${room.resident} (${room.age} years old)")
-                    InfoRow(label = "Preferred Temp", value = "${room.preferredTemp}°C")
-                    InfoRow(label = "Preferred Humidity", value = "${room.preferredHumidity}%")
-                    HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f), thickness = 1.dp)
-                }
-            }
         }
-    }
-}
-
-fun getRoomImageResource(resident: String): Int {
-    return when (resident) {
-        "Eva Paucek" -> R.drawable.jerry_bedroom
-        "Anthony Bergstrom" -> R.drawable.alice_bedroom
-        "Alton Moen" -> R.drawable.paul_bedroom
-        "Mrs. Gerard Herman" -> R.drawable.emma_bedroom
-        else -> R.drawable.placeholder_image
-    }
-}
-
-@Composable
-fun InfoRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                color = MaterialTheme.colorScheme.secondary
-            )
-        )
     }
 }

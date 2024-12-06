@@ -40,8 +40,22 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNavigation(navController: NavHostController) {
     NavHost(navController = navController, startDestination = "login") {
+        // Login Page
         composable("login") { LoginPage(navController) }
-        composable("home") { HomePage() }
+
+        // Home Page
+        composable("home") { HomePage(navController) }
+
+        // Room Details Page
+        composable("details/{roomId}") { backStackEntry ->
+            val roomId = backStackEntry.arguments?.getString("roomId")
+            if (roomId != null) {
+                RoomDetailsPage(navController = navController, roomId = roomId)
+            } else {
+                // Handle null roomId gracefully, e.g., show an error message or navigate back
+                Text("Error: Room ID not provided!")
+            }
+        }
     }
 }
 
@@ -70,7 +84,7 @@ fun LoginPage(navController: NavHostController) {
             value = email,
             onValueChange = {
                 email = it
-                Log.d("LoginPage", "Email updated: $email") // Log email updates
+                Log.d("LoginPage", "Email updated: $email")
             },
             label = { Text("Email address") },
             modifier = Modifier.fillMaxWidth()
@@ -81,7 +95,7 @@ fun LoginPage(navController: NavHostController) {
             value = password,
             onValueChange = {
                 password = it
-                Log.d("LoginPage", "Password updated") // Log password updates (without logging the actual password for security)
+                Log.d("LoginPage", "Password updated")
             },
             label = { Text("Password") },
             modifier = Modifier.fillMaxWidth(),
@@ -91,15 +105,15 @@ fun LoginPage(navController: NavHostController) {
 
         Button(
             onClick = {
-                Log.d("LoginPage", "Login attempt with Email: $email") // Log login attempt
+                Log.d("LoginPage", "Login attempt with Email: $email")
                 if (email == "admin@example.com" && password == "admin123") {
-                    Log.d("LoginPage", "Login successful for Email: $email") // Log successful login
+                    Log.d("LoginPage", "Login successful for Email: $email")
                     Toast.makeText(context, "Login Successful!", Toast.LENGTH_SHORT).show()
                     navController.navigate("home") {
-                        popUpTo("login") { inclusive = true } // Clear the back stack
+                        popUpTo("login") { inclusive = true }
                     }
                 } else {
-                    Log.d("LoginPage", "Invalid login attempt for Email: $email") // Log failed login
+                    Log.d("LoginPage", "Invalid login attempt for Email: $email")
                     Toast.makeText(context, "Invalid Credentials!", Toast.LENGTH_SHORT).show()
                 }
             },
@@ -115,17 +129,34 @@ fun LoginPage(navController: NavHostController) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             TextButton(onClick = {
-                Log.d("LoginPage", "Signup clicked") // Log signup click
+                Log.d("LoginPage", "Signup clicked")
             }) {
                 Text("Don't have an account?")
             }
             Spacer(modifier = Modifier.width(8.dp))
             TextButton(onClick = {
-                Log.d("LoginPage", "Admin login clicked") // Log admin login click
+                Log.d("LoginPage", "Admin login clicked")
             }) {
                 Text("Admin Login")
             }
         }
+    }
+}
+
+@Composable
+fun RoomDetailsPage(roomId: String?) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "Room Details for Room ID: $roomId",
+            style = MaterialTheme.typography.headlineMedium.copy(
+                color = MaterialTheme.colorScheme.primary
+            )
+        )
     }
 }
 
