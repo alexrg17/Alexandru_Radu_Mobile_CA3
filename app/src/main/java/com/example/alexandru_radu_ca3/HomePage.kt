@@ -1,10 +1,8 @@
 package com.example.alexandru_radu_ca3
 
 import android.util.Log
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,10 +18,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -84,26 +80,7 @@ fun HomePage(navController: NavController) {
 
         Column {
             // Header
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.secondary
-                            )
-                        )
-                    )
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Home Temperature Monitor",
-                    style = if (isTablet) MaterialTheme.typography.headlineLarge else MaterialTheme.typography.headlineMedium,
-                    color = Color.White
-                )
-            }
+            AnimatedHeader(isTablet = isTablet)
 
             // Content
             when {
@@ -134,6 +111,36 @@ fun HomePage(navController: NavController) {
                 }
             }
         }
+    }
+}
+
+@Composable
+fun AnimatedHeader(isTablet: Boolean) {
+    var colorToggle by remember { mutableStateOf(false) }
+    val backgroundColor by animateColorAsState(
+        targetValue = if (colorToggle) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
+        animationSpec = tween(durationMillis = 2000)
+    )
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            colorToggle = !colorToggle
+            kotlinx.coroutines.delay(3000)
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(backgroundColor)
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "Home Temperature Monitor",
+            style = if (isTablet) MaterialTheme.typography.headlineLarge else MaterialTheme.typography.headlineMedium,
+            color = Color.White
+        )
     }
 }
 

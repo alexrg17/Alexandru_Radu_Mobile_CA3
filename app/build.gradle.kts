@@ -59,29 +59,31 @@ dependencies {
     // Navigation Component for Jetpack Compose
     implementation("androidx.navigation:navigation-compose:2.7.3")
 
+    // Retrofit for API calls
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    implementation("androidx.navigation:navigation-compose:2.7.3")
-    implementation("io.coil-kt:coil-compose:2.3.0")
+
+    // Compose Animation for animations
+    implementation("androidx.compose.animation:animation:1.5.3")
+
+    // Core libraries and Material 3
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.material3)
-
-    // Other dependencies
-    implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
 
-    debugImplementation(libs.androidx.ui.tooling)
+    // Debugging tools for Compose UI previews
+    debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // Testing libraries
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
-
     testImplementation(libs.junit)
 }
